@@ -22,7 +22,9 @@ const string ARQ_VENDAS = "vendas_semana.txt";
 }
 
 struct ItemEstoque {
+    int id = 0;
     string nome;
+    string categoria;
     int quantidade = 0;
     string observacao;
 };

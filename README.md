@@ -49,6 +49,8 @@ Centraliza os tipos compartilhados pelo sistema, como `ItemEstoque`, `Venda`,
 `ClienteRanking` e `ItemRanking`, além das configurações dos arquivos de dados e
 do limite de estoque baixo.
 
+Cada `ItemEstoque` possui ID, nome, categoria, quantidade e observação.
+
 ### `util.cpp` e `util.hpp`
 
 Contêm funções auxiliares utilizadas por vários módulos:
@@ -62,6 +64,10 @@ Contêm funções auxiliares utilizadas por vários módulos:
 
 Implementa a persistência dos dados. O módulo carrega e salva o estoque e as
 vendas nos arquivos `estoque.txt` e `vendas_semana.txt`.
+
+O carregamento continua aceitando o formato antigo do estoque
+(`nome|quantidade|observação`). Depois que o sistema salvar os dados, o formato
+passa a ser `id|nome|categoria|quantidade|observação`.
 
 ### `sistema_estoque.hpp`
 
@@ -154,8 +160,17 @@ cmake --build build
 
 Os dados são salvos na mesma pasta em que o programa é executado:
 
-- `estoque.txt`: itens, quantidades e observações;
+- `estoque.txt`: IDs, itens, categorias, quantidades e observações;
 - `vendas_semana.txt`: item vendido, quantidade e cliente.
+
+O formato atual de `estoque.txt` é:
+
+```text
+id|nome|categoria|quantidade|observação
+```
+
+O sistema também lê o formato antigo `nome|quantidade|observação` e atribui IDs
+automaticamente durante o carregamento.
 
 Por isso, execute o programa a partir da raiz do projeto para que os arquivos
 sejam encontrados corretamente.

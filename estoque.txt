@@ -1,2 +1,2 @@
-Motor de máquina de café|10|Motor de 0,5cv
-Rolamento|15|5mm de diametro
+1|Motor de máquina de café||10|Motor de 0,5cv
+2|Rolamento||15|5mm de diametro
