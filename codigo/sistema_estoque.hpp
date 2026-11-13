@@ -44,6 +44,9 @@ public:
         if (encontrarItemPorId(id) >= 0) { erro = "Já existe um item com esse ID."; return false; }
 
         estoque.push_back({id, nomeLimpo, aparar(categoria), quantidade, aparar(observacao)});
+        sort(estoque.begin(), estoque.end(), [](const auto& a, const auto& b) {
+            return a.id < b.id;
+        });
         return repositorio.salvarEstoque(estoque) ? true : (erro = "Não foi possível gravar o estoque.", false);
     }
 

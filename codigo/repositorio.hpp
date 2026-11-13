@@ -53,6 +53,9 @@ public:
             estoque.push_back(item);
             proximoId = max(proximoId, id + 1);
         }
+        sort(estoque.begin(), estoque.end(), [](const auto& a, const auto& b) {
+            return a.id < b.id;
+        });
         return !arquivo.bad();
     }
 

@@ -1,2 +1,4 @@
-1|Motor de máquina de café||10|Motor de 0,5cv
-2|Rolamento||15|5mm de diametro
+1|Máquina Agrícula|Maquinário|1|entregar daqui 15 dias
+2|Eixo traseiro|Ferramenta|31|
+3|Rolamento 16dm|Ferramenta|25|
+4|Engrenagem|Peças|15|para entregar na sexta
