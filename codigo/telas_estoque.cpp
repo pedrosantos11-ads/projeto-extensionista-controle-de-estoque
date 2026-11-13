@@ -5,17 +5,23 @@
 // ============================================================
 void cadastrarItem(SistemaEstoque& sistema) {
     const auto r = formulario("ADICIONAR ITEM AO ESTOQUE", {
-        {"Nome do item", ""}, {"Quantidade", "0"}, {"Observação/Nota", ""}
+        {"ID do item", ""}, {"Nome do item", ""}, {"Categoria", ""},
+        {"Quantidade", "0"}, {"Observação/Nota", ""}
     });
     if (!r.confirmado) return;
 
+    int id = 0;
     int quantidade = 0;
-    if (!inteiroValido(r.valores[1], quantidade) || quantidade < 0) {
+    if (!inteiroValido(r.valores[0], id) || id <= 0) {
+        mensagem("Erro", "O ID deve ser um número inteiro maior que zero.", true);
+        return;
+    }
+    if (!inteiroValido(r.valores[3], quantidade) || quantidade < 0) {
         mensagem("Erro", "A quantidade deve ser um número inteiro maior ou igual a zero.", true);
         return;
     }
     string erro;
-    if (!sistema.adicionarItem(r.valores[0], quantidade, r.valores[2], erro)) {
+    if (!sistema.adicionarItem(id, r.valores[1], r.valores[2], quantidade, r.valores[4], erro)) {
         mensagem("Erro", erro, true);
         return;
     }
@@ -28,7 +34,9 @@ void listarEstoque(SistemaEstoque& sistema) {
 
     vector<string> linhas;
     for (const auto& item : estoque) {
-        linhas.push_back(item.nome + " | Qtd: " + to_string(item.quantidade) +
+        linhas.push_back("ID: " + to_string(item.id) + " | " + item.nome +
+                         " | Categoria: " + item.categoria +
+                         " | Qtd: " + to_string(item.quantidade) +
                          " | " + (item.quantidade < config::LIMITE_ESTOQUE_BAIXO ? "CRÍTICO" :
                                    item.quantidade < config::LIMITE_ESTOQUE_BAIXO * 2 ? "BAIXO" : "OK") +
                          " | Nota: " + (item.observacao.empty() ? "-" : item.observacao));
@@ -49,6 +57,8 @@ void listarEstoque(SistemaEstoque& sistema) {
         if (event == Event::Return) {
             const auto& item = sistema.getEstoque()[static_cast<size_t>(selecionado)];
             mensagem("Detalhes do item", "Item: " + item.nome +
+                     "\nID: " + to_string(item.id) +
+                     "\nCategoria: " + item.categoria +
                      "\nQuantidade: " + to_string(item.quantidade) +
                      "\nStatus: " + (item.quantidade < config::LIMITE_ESTOQUE_BAIXO ? "CRÍTICO" :
                                         item.quantidade < config::LIMITE_ESTOQUE_BAIXO * 2 ? "BAIXO" : "OK") +
@@ -79,15 +89,19 @@ void editarEstoque(SistemaEstoque& sistema) {
             const size_t indice = static_cast<size_t>(selecionado);
             const auto item = sistema.getEstoque()[indice];
             tela.Exit();
-            const auto r = formulario("EDITAR ITEM", {{"Quantidade", to_string(item.quantidade)}, {"Observação/Nota", item.observacao}});
+            const auto r = formulario("EDITAR ITEM", {
+                {"Categoria", item.categoria},
+                {"Quantidade", to_string(item.quantidade)},
+                {"Observação/Nota", item.observacao}
+            });
             if (!r.confirmado) return true;
             int quantidade = 0;
-            if (!inteiroValido(r.valores[0], quantidade) || quantidade < 0) {
+            if (!inteiroValido(r.valores[1], quantidade) || quantidade < 0) {
                 mensagem("Erro", "Quantidade inválida.", true);
                 return true;
             }
             string erro;
-            if (!sistema.editarItem(indice, quantidade, r.valores[1], erro)) mensagem("Erro", erro, true);
+            if (!sistema.editarItem(indice, r.valores[0], quantidade, r.valores[2], erro)) mensagem("Erro", erro, true);
             else mensagem("Salvo com sucesso", quantidade < config::LIMITE_ESTOQUE_BAIXO ? "ATENÇÃO: item em nível crítico." : "Item atualizado com sucesso.");
             return true;
         }
@@ -106,7 +120,8 @@ void removerItem(SistemaEstoque& sistema) {
 
         vector<string> nomes;
         for (const auto& item : sistema.getEstoque()) {
-            nomes.push_back(item.nome + " (Qtd: " + to_string(item.quantidade) + ")");
+            nomes.push_back("ID: " + to_string(item.id) + " | " + item.nome +
+                            " (Qtd: " + to_string(item.quantidade) + ")");
         }
 
         int selecionado = 0;

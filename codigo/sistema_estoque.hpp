@@ -27,26 +27,36 @@ public:
         return -1;
     }
 
-    bool adicionarItem(const string& nome, int quantidade, const string& observacao, string& erro) {
+    int encontrarItemPorId(int id) const {
+        for (size_t i = 0; i < estoque.size(); ++i) {
+            if (estoque[i].id == id) return static_cast<int>(i);
+        }
+        return -1;
+    }
+
+    bool adicionarItem(int id, const string& nome, const string& categoria,
+                       int quantidade, const string& observacao, string& erro) {
+        if (id <= 0) { erro = "O ID deve ser maior que zero."; return false; }
         const string nomeLimpo = aparar(nome);
         if (nomeLimpo.empty()) { erro = "Informe o nome do item."; return false; }
+        if (aparar(categoria).empty()) { erro = "Informe a categoria do item."; return false; }
         if (quantidade < 0) { erro = "A quantidade não pode ser negativa."; return false; }
+        if (encontrarItemPorId(id) >= 0) { erro = "Já existe um item com esse ID."; return false; }
 
-        const int pos = encontrarItem(nomeLimpo);
-        if (pos >= 0) {
-            estoque[pos].quantidade += quantidade;
-            const string obs = aparar(observacao);
-            if (!obs.empty()) estoque[pos].observacao = obs;
-        } else {
-            estoque.push_back({nomeLimpo, quantidade, aparar(observacao)});
-        }
+        estoque.push_back({id, nomeLimpo, aparar(categoria), quantidade, aparar(observacao)});
+        sort(estoque.begin(), estoque.end(), [](const auto& a, const auto& b) {
+            return a.id < b.id;
+        });
         return repositorio.salvarEstoque(estoque) ? true : (erro = "Não foi possível gravar o estoque.", false);
     }
 
-    bool editarItem(size_t indice, int quantidade, const string& observacao, string& erro) {
+    bool editarItem(size_t indice, const string& categoria, int quantidade,
+                    const string& observacao, string& erro) {
         if (indice >= estoque.size()) { erro = "Item inválido."; return false; }
+        if (aparar(categoria).empty()) { erro = "Informe a categoria do item."; return false; }
         if (quantidade < 0) { erro = "A quantidade não pode ser negativa."; return false; }
         estoque[indice].quantidade = quantidade;
+        estoque[indice].categoria = aparar(categoria);
         estoque[indice].observacao = aparar(observacao);
         return repositorio.salvarEstoque(estoque) ? true : (erro = "Não foi possível gravar o estoque.", false);
     }
