@@ -30,6 +30,7 @@ struct ItemEstoque {
 };
 
 struct Venda {
+    int produtoId = 0;
     string item;
     int quantidade = 0;
     string cliente;

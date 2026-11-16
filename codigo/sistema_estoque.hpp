@@ -5,8 +5,25 @@
 class SistemaEstoque {
 public:
     bool carregarTudo() {
-        return repositorio.carregarEstoque(estoque) &&
-               repositorio.carregarVendas(vendas);
+        if (!repositorio.carregarEstoque(estoque) ||
+            !repositorio.carregarVendas(vendas)) {
+            return false;
+        }
+
+        for (auto& venda : vendas) {
+            if (venda.produtoId > 0) {
+                const int indice = encontrarItemPorId(venda.produtoId);
+                if (indice >= 0) venda.item = estoque[static_cast<size_t>(indice)].nome;
+                continue;
+            }
+
+            const int indice = encontrarItem(venda.item);
+            if (indice >= 0) {
+                venda.produtoId = estoque[static_cast<size_t>(indice)].id;
+                venda.item = estoque[static_cast<size_t>(indice)].nome;
+            }
+        }
+        return true;
     }
 
     bool salvarTudo() const {
@@ -68,6 +85,10 @@ public:
         }
 
         const ItemEstoque itemRemovido = estoque[indice];
+        if (existeVendaDoItem(itemRemovido)) {
+            erro = "Não é possível remover um item que possui vendas registradas.";
+            return false;
+        }
         nomeRemovido = itemRemovido.nome;
 
         estoque.erase(estoque.begin() + static_cast<ptrdiff_t>(indice));
@@ -86,12 +107,22 @@ public:
         if (quantidade <= 0) { erro = "A quantidade vendida deve ser maior que zero."; return false; }
         const string clienteLimpo = aparar(cliente);
         if (clienteLimpo.empty()) { erro = "Informe o nome do cliente."; return false; }
+        if (quantidade > estoque[indice].quantidade) {
+            erro = "A quantidade vendida não pode ser maior que o estoque disponível.";
+            return false;
+        }
 
-        const int vendida = min(quantidade, estoque[indice].quantidade);
-        estoque[indice].quantidade -= vendida;
-        vendas.push_back({estoque[indice].nome, quantidade, clienteLimpo});
+        const auto estoqueAnterior = estoque;
+        const auto vendasAnteriores = vendas;
 
-        if (!repositorio.salvarEstoque(estoque) || !repositorio.salvarVendas(vendas)) {
+        estoque[indice].quantidade -= quantidade;
+        vendas.push_back({estoque[indice].id, estoque[indice].nome, quantidade, clienteLimpo});
+
+        if (!salvarTudo()) {
+            estoque = estoqueAnterior;
+            vendas = vendasAnteriores;
+            repositorio.salvarEstoque(estoque);
+            repositorio.salvarVendas(vendas);
             erro = "Não foi possível salvar a venda e o estoque.";
             return false;
         }
@@ -101,15 +132,59 @@ public:
     bool editarVenda(size_t indice, int quantidade, const string& cliente, string& erro) {
         if (indice >= vendas.size()) { erro = "Venda inválida."; return false; }
         if (quantidade <= 0 || aparar(cliente).empty()) { erro = "Preencha os dados corretamente."; return false; }
+
+        const int indiceProduto = encontrarProdutoDaVenda(vendas[indice]);
+        if (indiceProduto < 0) {
+            erro = "O produto desta venda não está mais disponível no estoque.";
+            return false;
+        }
+
+        const auto estoqueAnterior = estoque;
+        const auto vendasAnteriores = vendas;
+        ItemEstoque& item = estoque[static_cast<size_t>(indiceProduto)];
+        item.quantidade += vendas[indice].quantidade;
+        if (quantidade > item.quantidade) {
+            estoque = estoqueAnterior;
+            erro = "A nova quantidade não pode ser maior que o estoque disponível.";
+            return false;
+        }
+
+        item.quantidade -= quantidade;
         vendas[indice].quantidade = quantidade;
         vendas[indice].cliente = aparar(cliente);
-        return repositorio.salvarVendas(vendas) ? true : (erro = "Não foi possível gravar as vendas.", false);
+        if (!salvarTudo()) {
+            estoque = estoqueAnterior;
+            vendas = vendasAnteriores;
+            repositorio.salvarEstoque(estoque);
+            repositorio.salvarVendas(vendas);
+            erro = "Não foi possível salvar a edição da venda e do estoque.";
+            return false;
+        }
+        return true;
     }
 
     bool removerVenda(size_t indice, string& erro) {
         if (indice >= vendas.size()) { erro = "Venda inválida."; return false; }
+
+        const int indiceProduto = encontrarProdutoDaVenda(vendas[indice]);
+        if (indiceProduto < 0) {
+            erro = "O produto desta venda não está mais disponível no estoque.";
+            return false;
+        }
+
+        const auto estoqueAnterior = estoque;
+        const auto vendasAnteriores = vendas;
+        estoque[static_cast<size_t>(indiceProduto)].quantidade += vendas[indice].quantidade;
         vendas.erase(vendas.begin() + static_cast<ptrdiff_t>(indice));
-        return repositorio.salvarVendas(vendas) ? true : (erro = "Não foi possível gravar as vendas.", false);
+        if (!salvarTudo()) {
+            estoque = estoqueAnterior;
+            vendas = vendasAnteriores;
+            repositorio.salvarEstoque(estoque);
+            repositorio.salvarVendas(vendas);
+            erro = "Não foi possível remover a venda e atualizar o estoque.";
+            return false;
+        }
+        return true;
     }
 
     bool renomearCliente(const string& antigo, const string& novo, string& erro) {
@@ -159,6 +234,18 @@ public:
     const vector<Venda>& getVendas() const { return vendas; }
 
 private:
+    int encontrarProdutoDaVenda(const Venda& venda) const {
+        if (venda.produtoId > 0) return encontrarItemPorId(venda.produtoId);
+        return encontrarItem(venda.item);
+    }
+
+    bool existeVendaDoItem(const ItemEstoque& item) const {
+        return any_of(vendas.begin(), vendas.end(), [&](const auto& venda) {
+            return (venda.produtoId > 0 && venda.produtoId == item.id) ||
+                   (venda.produtoId == 0 && venda.item == item.nome);
+        });
+    }
+
     Repositorio repositorio;
     vector<ItemEstoque> estoque;
     vector<Venda> vendas;
