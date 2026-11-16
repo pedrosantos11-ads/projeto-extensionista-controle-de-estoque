@@ -23,6 +23,7 @@ vector<string> separar(const string& linha, char delimitador) {
     string parte;
     stringstream ss(linha);
     while (getline(ss, parte, delimitador)) partes.push_back(parte);
+    if (!linha.empty() && linha.back() == delimitador) partes.push_back("");
     return partes;
 }
 

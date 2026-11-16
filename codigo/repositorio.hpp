@@ -80,16 +80,30 @@ public:
         while (getline(arquivo, linha)) {
             if (aparar(linha).empty()) continue;
             const auto campos = separar(linha, '|');
-            if (campos.size() < 3) continue;
-
             int quantidade = 0;
-            if (!inteiroValido(campos[1], quantidade) || quantidade <= 0) continue;
+            int produtoId = 0;
+            string item;
+            string cliente;
 
-            const string item = aparar(campos[0]);
-            const string cliente = aparar(campos[2]);
+            if (campos.size() >= 4) {
+                if (!inteiroValido(campos[0], produtoId) || produtoId <= 0 ||
+                    !inteiroValido(campos[2], quantidade)) {
+                    continue;
+                }
+                item = aparar(campos[1]);
+                cliente = aparar(campos[3]);
+            } else if (campos.size() >= 3) {
+                if (!inteiroValido(campos[1], quantidade)) continue;
+                item = aparar(campos[0]);
+                cliente = aparar(campos[2]);
+            } else {
+                continue;
+            }
+
             if (item.empty() || cliente.empty()) continue;
 
-            vendas.push_back({item, quantidade, cliente});
+            if (quantidade <= 0) continue;
+            vendas.push_back({produtoId, item, quantidade, cliente});
         }
         return !arquivo.bad();
     }
@@ -97,7 +111,8 @@ public:
     bool salvarVendas(const vector<Venda>& vendas) const {
         return salvar(config::ARQ_VENDAS, [&](ofstream& arquivo) {
             for (const auto& venda : vendas) {
-                arquivo << limparSeparador(venda.item) << '|'
+                arquivo << venda.produtoId << '|'
+                        << limparSeparador(venda.item) << '|'
                         << venda.quantidade << '|'
                         << limparSeparador(venda.cliente) << '\n';
             }

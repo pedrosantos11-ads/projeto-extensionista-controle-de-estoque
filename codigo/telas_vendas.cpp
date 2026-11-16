@@ -23,10 +23,6 @@ void registrarVenda(SistemaEstoque& sistema) {
             if (!r.confirmado) return true;
             int quantidade = 0;
             if (!inteiroValido(r.valores[0], quantidade) || quantidade <= 0) { mensagem("Erro", "Quantidade inválida.", true); return true; }
-            const int disponivel = sistema.getEstoque()[indice].quantidade;
-            if (quantidade > disponivel) {
-                mensagem("Quantidade acima do estoque", "A venda será registrada, mas apenas " + to_string(disponivel) + " unidades serão retiradas do estoque.", true);
-            }
             string erro;
             if (!sistema.registrarVenda(indice, quantidade, r.valores[1], erro)) mensagem("Erro", erro, true);
             else mensagem("Salvo com sucesso", "Venda salva e estoque atualizado.");

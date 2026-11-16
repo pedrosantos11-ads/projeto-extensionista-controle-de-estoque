@@ -161,7 +161,7 @@ cmake --build build
 Os dados são salvos na mesma pasta em que o programa é executado:
 
 - `estoque.txt`: IDs, itens, categorias, quantidades e observações;
-- `vendas_semana.txt`: item vendido, quantidade e cliente.
+- `vendas_semana.txt`: ID do produto, item vendido, quantidade e cliente.
 
 O formato atual de `estoque.txt` é:
 
@@ -171,6 +171,18 @@ id|nome|categoria|quantidade|observação
 
 O sistema também lê o formato antigo `nome|quantidade|observação` e atribui IDs
 automaticamente durante o carregamento.
+
+O formato antigo de `vendas_semana.txt` (`item|quantidade|cliente`) continua
+sendo aceito. Novas gravações usam o formato:
+
+```text
+id_produto|item|quantidade|cliente
+```
+
+Uma venda só é registrada quando a quantidade solicitada está disponível no
+estoque. Ao editar uma venda, a quantidade anterior retorna ao estoque antes
+da aplicação da nova quantidade; ao remover uma venda, suas unidades também
+são devolvidas.
 
 Por isso, execute o programa a partir da raiz do projeto para que os arquivos
 sejam encontrados corretamente.
